@@ -42,11 +42,14 @@ func (kb KnowledgeBaseRepo) Add(ctx context.Context, u knowledgebase.KnowledgeBa
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
-	rows.Next()
+	ex := rows.Next()
 	count := 0
-	if err = rows.Scan(&count); err != nil {
-		return err
+	if ex {
+		if err = rows.Scan(&count); err != nil {
+			return err
+		}
 	}
 
 	if count == 1 {
@@ -71,7 +74,27 @@ func (kb KnowledgeBaseRepo) Add(ctx context.Context, u knowledgebase.KnowledgeBa
 	if err != nil {
 		return err
 	}
-	_, err = newDB.ExecContext(ctx, "CREATE TABLE document_collection (id BIGSERIAL PRIMARY KEY, provider VARCHAR(255), path VARCHAR(1024), page INT, chunk INT, created TIMESTAMP, embedding VECTOR)")
+
+	_, err = newDB.ExecContext(ctx, "CREATE TABLE filesystem (id BIGSERIAL PRIMARY KEY, unique_id varchar(42), provider VARCHAR(255), path VARCHAR(1024), created TIMESTAMP, updated TIMESTAMP)")
+
+	if err != nil {
+		return err
+	}
+
+	_, err = newDB.ExecContext(ctx, `
+CREATE TABLE document_collection (
+    id BIGSERIAL PRIMARY KEY,
+    unique_id varchar(42),
+    file_id BIGSERIAL,
+    page INT,
+    chunk INT,
+    created TIMESTAMP,
+    embedding VECTOR,
+    CONSTRAINT fk_document_file
+      FOREIGN KEY(file_id)
+	    REFERENCES filesystem(id)
+)
+`)
 
 	if err != nil {
 		return err
