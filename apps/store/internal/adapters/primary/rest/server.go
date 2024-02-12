@@ -2,7 +2,9 @@ package rest
 
 import (
 	"github.com/constantincuy/knowledgestore/internal/adapters/primary/rest/controller"
+	"github.com/constantincuy/knowledgestore/internal/core/service/files"
 	"github.com/constantincuy/knowledgestore/internal/core/service/knowledgebases"
+	"github.com/constantincuy/knowledgestore/internal/ports"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -20,11 +22,11 @@ func (a Server) Run() error {
 	return server.ListenAndServe()
 }
 
-func New(knowledgeService knowledgebases.Api) Server {
+func New(knowledgeBaseManager ports.KnowledgeBaseManager, knowledgeService knowledgebases.Api, fileService files.Api) Server {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	knowledgeController := controller.NewKnowledgeBaseController(knowledgeService)
+	knowledgeController := controller.NewKnowledgeBaseController(knowledgeBaseManager, knowledgeService, fileService)
 
 	knowledgeController.Register(r)
 

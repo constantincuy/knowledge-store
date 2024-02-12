@@ -13,6 +13,7 @@ import (
 )
 
 type FileWorker struct {
+	name         string
 	mailbox      actor.MailboxSender[file.Downloaded]
 	storage      ports.Storage
 	fileRepo     ports.FileRepo
@@ -25,7 +26,7 @@ func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 		return actor.WorkerEnd
 
 	case <-time.After(time.Second * 10):
-		name, _ := knowledgebase.NewName("business")
+		name, _ := knowledgebase.NewName(w.name)
 		provider, _ := file.NewProvider(w.storage.Provider())
 		files, _ := w.fileRepo.GetAllProviderFiles(ctx, name, provider)
 		list, _ := file.NewList(files)
@@ -37,13 +38,14 @@ func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 				return actor.WorkerContinue
 			}
 			log.Printf("Created file %s\n", meta.Path)
-			f, err := os.Create(path.Join(w.downloadPath, uuid.UUID(meta.Id).String()+".txt"))
+			downloadFile := path.Join(w.downloadPath, uuid.UUID(meta.Id).String()+".txt")
+			f, err := os.Create(downloadFile)
 			if err != nil {
 				log.Println(err)
 				return actor.WorkerContinue
 			}
 			w.storage.DownloadDocument(ctx, meta.Path, f)
-			err = w.mailbox.Send(ctx, file.NewDownloaded(meta, f))
+			err = w.mailbox.Send(ctx, file.NewDownloaded(downloadFile, meta))
 			if err != nil {
 				log.Println(err)
 			}
@@ -52,9 +54,9 @@ func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 	}
 }
 
-func NewFileWorker(fileRepo ports.FileRepo, storage ports.Storage, mailbox actor.MailboxSender[file.Downloaded]) FileWorker {
+func NewFileWorker(name string, fileRepo ports.FileRepo, storage ports.Storage, mailbox actor.MailboxSender[file.Downloaded]) FileWorker {
 	dir, _ := os.Getwd()
 	downloadPath := path.Join(dir, "download", "fake")
 	_ = os.MkdirAll(downloadPath, os.ModePerm)
-	return FileWorker{mailbox, storage, fileRepo, downloadPath}
+	return FileWorker{name, mailbox, storage, fileRepo, downloadPath}
 }

@@ -16,6 +16,29 @@ type KnowledgeBaseRepo struct {
 	provider ports.DatabaseProvider
 }
 
+func (kb KnowledgeBaseRepo) GetAll(ctx context.Context) ([]string, error) {
+	result := make([]string, 0)
+	kbs, err := kb.provider.GetDatabase("kb_system")
+	if err != nil {
+		return result, err
+	}
+	defer kbs.Close()
+
+	rows, err := kbs.QueryContext(ctx, "SELECT * FROM knowledge_bases")
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var val string
+		rows.Scan(&val)
+		result = append(result, val)
+	}
+
+	return result, nil
+}
+
 func NewKnowledgeBaseRepo(provider ports.DatabaseProvider) (KnowledgeBaseRepo, error) {
 	return KnowledgeBaseRepo{provider}, nil
 }
@@ -33,10 +56,10 @@ func (kb KnowledgeBaseRepo) Add(ctx context.Context, u knowledgebase.KnowledgeBa
 	defer global.Close()
 
 	stmt, err := global.PrepareContext(ctx, "SELECT 1 as counter FROM pg_database WHERE datname = $1")
-
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, string(u.Name))
 	if err != nil {
@@ -63,11 +86,11 @@ func (kb KnowledgeBaseRepo) Add(ctx context.Context, u knowledgebase.KnowledgeBa
 	}
 
 	newDB, err := kb.provider.GetDatabase(string(u.Name))
-	defer newDB.Close()
 
 	if err != nil {
 		return err
 	}
+	defer newDB.Close()
 
 	_, err = newDB.ExecContext(ctx, "CREATE EXTENSION vector")
 
@@ -99,5 +122,23 @@ CREATE TABLE document_collection (
 	if err != nil {
 		return err
 	}
+
+	sys, err := kb.provider.GetDatabase("kb_system")
+	if err != nil {
+		return err
+	}
+	defer sys.Close()
+
+	stmt, err = sys.PrepareContext(ctx, "INSERT INTO knowledge_bases VALUES ($1)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, string(u.Name))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -8,12 +8,14 @@ import (
 type Api interface {
 	GetFilesystem(context.Context, GetFilesystemReq) (GetFilesystemRes, error)
 	Get(context.Context, GetFileReq) (GetFileRes, error)
+	Search(context.Context, SearchFilesReq) (SearchFilesRes, error)
 }
 
 type Service struct {
-	fileRepo ports.FileRepo
+	fileRepo  ports.FileRepo
+	embedding ports.EmbeddingExtractor
 }
 
-func NewService(fileRepo ports.FileRepo) Service {
-	return Service{fileRepo}
+func NewService(fileRepo ports.FileRepo, embedding ports.EmbeddingExtractor) Service {
+	return Service{fileRepo, embedding}
 }

@@ -36,6 +36,7 @@ func (d DocumentRepo) Add(ctx context.Context, knowledgeBase knowledgebase.Name,
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, uuid.UUID(doc.Id).String(), uuid.UUID(doc.FileId).String(), doc.Page, doc.Chunk, time.Time(doc.Created), float32ArrayToString(doc.Embedding))
 

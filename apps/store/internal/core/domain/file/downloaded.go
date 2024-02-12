@@ -1,12 +1,10 @@
 package file
 
-import "os"
-
 type Downloaded struct {
-	File *os.File
-	Meta File
+	DownloadPath string
+	Meta         File
 }
 
-func NewDownloaded(meta File, file *os.File) Downloaded {
-	return Downloaded{file, meta}
+func NewDownloaded(path string, meta File) Downloaded {
+	return Downloaded{path, meta}
 }

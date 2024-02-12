@@ -9,10 +9,12 @@ import (
 	"github.com/vladopajic/go-actor/actor"
 	"io"
 	"log"
+	"os"
 	"strings"
 )
 
 type DocumentWorker struct {
+	name       string
 	mailbox    actor.MailboxReceiver[file.Downloaded]
 	fileRepo   ports.FileRepo
 	embedding  ports.EmbeddingExtractor
@@ -61,14 +63,17 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 		return actor.WorkerEnd
 
 	case downloaded := <-w.mailbox.ReceiveC():
-		f := downloaded.File
+		f, err := os.Open(downloaded.DownloadPath)
+		if err != nil {
+			log.Println(err)
+			return actor.WorkerContinue
+		}
 
 		chunks, err := readChunks(bufio.NewReader(f))
 		if err != nil {
 			log.Println(err)
 			return actor.WorkerContinue
 		}
-		log.Printf("Chunks: %d", len(chunks))
 
 		for i, chunk := range chunks {
 			data := make([]string, 1)
@@ -80,21 +85,27 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 				return actor.WorkerContinue
 			}
 
-			log.Printf("Indexed chunk %d of file %s\n", i+1, downloaded.Meta.Path)
+			log.Printf("[%s] Indexed chunk %d of file %s\n", w.name, i+1, downloaded.Meta.Path)
 			_, _ = w.docService.Create(ctx, documents.AddDocumentReq{
-				KnowledgeBase: "business",
+				KnowledgeBase: w.name,
 				FileId:        uuid.UUID(downloaded.Meta.Id),
 				Chunk:         i + 1,
 				Embedding:     embed.Vectors,
 			})
 		}
 
+		err = os.Remove(downloaded.DownloadPath)
+		if err != nil {
+			log.Println(err)
+		}
+
 		return actor.WorkerContinue
 	}
 }
 
-func NewDocumentWorker(fileRepo ports.FileRepo, docService documents.Api, embedding ports.EmbeddingExtractor, mailbox actor.MailboxReceiver[file.Downloaded]) DocumentWorker {
+func NewDocumentWorker(name string, fileRepo ports.FileRepo, docService documents.Api, embedding ports.EmbeddingExtractor, mailbox actor.MailboxReceiver[file.Downloaded]) DocumentWorker {
 	return DocumentWorker{
+		name:       name,
 		mailbox:    mailbox,
 		fileRepo:   fileRepo,
 		embedding:  embedding,
