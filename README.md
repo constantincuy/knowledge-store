@@ -1,4 +1,4 @@
-# Knowledge base
+# Knowledge store
 
 Proof of concept for an AI based document indexing system using Sentence-Transformer written in Go and Typescript.
 
