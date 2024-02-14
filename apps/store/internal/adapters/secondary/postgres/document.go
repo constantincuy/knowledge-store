@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"github.com/constantincuy/knowledgestore/internal/core/domain/common"
 	"github.com/constantincuy/knowledgestore/internal/core/domain/document"
 	"github.com/constantincuy/knowledgestore/internal/core/domain/knowledgebase"
 	"github.com/constantincuy/knowledgestore/internal/ports"
@@ -13,6 +14,24 @@ import (
 
 type DocumentRepo struct {
 	provider ports.DatabaseProvider
+}
+
+func (d DocumentRepo) Delete(ctx context.Context, knowledgeBase knowledgebase.Name, fileId common.Id) error {
+	db, err := d.provider.GetDatabase(string(knowledgeBase))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	stmt, err := db.PrepareContext(ctx, "DELETE FROM document_collection WHERE fileId = $1")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, uuid.UUID(fileId).String())
+
+	return err
 }
 
 func float32ArrayToString(arr []float32) string {

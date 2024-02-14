@@ -7,6 +7,7 @@ import (
 
 type Api interface {
 	Create(context.Context, AddDocumentReq) (AddDocumentRes, error)
+	Delete(context.Context, DeleteDocumentReq) (DeleteDocumentRes, error)
 }
 
 type Service struct {

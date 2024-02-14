@@ -39,17 +39,17 @@ func NewStorage() Storage {
 		Updated:  updated,
 	}
 
-	files["my/path/katze.txt"] = file.File{
+	files["my/path/flugzeug.txt"] = file.File{
 		Id:       common.NewId(),
-		Path:     "my/path/katze.txt",
+		Path:     "my/path/flugzeug.txt",
 		Provider: "fake_provider_1",
 		Created:  created,
 		Updated:  updated,
 	}
 
-	files["my/path/flugzeug.txt"] = file.File{
+	files["my/path/computer.txt"] = file.File{
 		Id:       common.NewId(),
-		Path:     "my/path/flugzeug.txt",
+		Path:     "my/path/computer.txt",
 		Provider: "fake_provider_1",
 		Created:  created,
 		Updated:  updated,
@@ -63,15 +63,15 @@ Im engeren Sinn bezeichnet man als Haushund die Hunde, die überwiegend im Haus 
 
 Der Dingo ist ebenfalls ein Haushund, wird jedoch provisorisch als eigenständige Unterart des Wolfes geführt`
 
-	contents["my/path/katze.txt"] = `
-Die Hauskatze (Felis catus) ist die Haustierform der Falbkatze. Sie zählt zu den beliebtesten Heimtieren. In der Rassekatzenzucht werden oft nur die Tiere als Hauskatze bezeichnet, die keiner anerkannten Katzenrasse angehören.
-
-In Deutschland sind Hauskatzen die am häufigsten gehaltenen Haustiere; aufgrund ihres Fressverhaltens werden freilaufende Hauskatzen zu den problematischsten invasiven Arten der Welt und zur Bedrohung der Artenvielfalt gezählt.`
-
 	contents["my/path/flugzeug.txt"] = `
 Ein Flugzeug ist ein Luftfahrzeug, das schwerer als Luft ist und den zu seinem Fliegen nötigen dynamischen Auftrieb mit nicht-rotierenden Auftriebsflächen erzeugt. In der enger gefassten Definition der Internationalen Zivilluftfahrtorganisation (ICAO) ist es auch immer ein motorisiertes Luftfahrzeug. Der Betrieb von Flugzeugen, die am Luftverkehr teilnehmen, wird durch Luftverkehrsgesetze geregelt.
 
 Umgangssprachlich werden Flugzeuge mitunter auch Flieger genannt, der Ausdruck Flieger hat als Hauptbedeutung jedoch den Piloten.`
+
+	contents["my/path/computer.txt"] = `
+Ein Computer (englisch; deutsche Aussprache [kɔmˈpjuːtɐ]) oder Rechner ist ein Gerät, das mittels programmierbarer Rechenvorschriften Daten verarbeitet. Dementsprechend werden vereinzelt auch die abstrahierenden beziehungsweise veralteten, synonym gebrauchten Begriffe Rechenanlage, Datenverarbeitungsanlage oder elektronische Datenverarbeitungsanlage sowie Elektronengehirn verwendet.
+
+Charles Babbage und Ada Lovelace (geborene Byron) gelten durch die von Babbage 1837 entworfene Rechenmaschine Analytical Engine als Vordenker des modernen universell programmierbaren Computers. Konrad Zuse (Z3, 1941 und Z4, 1945) in Berlin, John Presper Eckert und John William Mauchly (ENIAC, 1946) bauten die ersten funktionstüchtigen Geräte dieser Art. Bei der Klassifizierung eines Geräts als universell programmierbarer Computer spielt die Turing-Vollständigkeit eine wesentliche Rolle. Sie ist benannt nach dem englischen Mathematiker Alan Turing, der 1936 das logische Modell der Turingmaschine eingeführt hatte.`
 
 	return Storage{files, contents}
 }

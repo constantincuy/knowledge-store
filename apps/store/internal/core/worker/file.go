@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"github.com/constantincuy/knowledgestore/internal/core/domain/file"
 	"github.com/constantincuy/knowledgestore/internal/core/domain/knowledgebase"
 	"github.com/constantincuy/knowledgestore/internal/ports"
@@ -26,37 +27,60 @@ func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 		return actor.WorkerEnd
 
 	case <-time.After(time.Second * 10):
-		name, _ := knowledgebase.NewName(w.name)
+		name, err := knowledgebase.NewName(w.name)
+		if err != nil {
+			log.Printf("Failed to start knowledge base %s file worker: %s", w.name, err)
+			return actor.WorkerEnd
+		}
 		provider, _ := file.NewProvider(w.storage.Provider())
 		files, _ := w.fileRepo.GetAllProviderFiles(ctx, name, provider)
 		list, _ := file.NewList(files)
 		changeList, _ := w.storage.GetChangedDocuments(ctx, file.NewFilesystem(list))
-		for _, meta := range changeList.Created {
-			err := w.fileRepo.Add(ctx, name, meta)
+		for _, meta := range changeList.Deleted {
+			err := w.fileRepo.Delete(ctx, name, provider, meta.Path)
 			if err != nil {
 				log.Println(err)
 				return actor.WorkerContinue
 			}
-			log.Printf("Created file %s\n", meta.Path)
-			downloadFile := path.Join(w.downloadPath, uuid.UUID(meta.Id).String()+".txt")
-			f, err := os.Create(downloadFile)
-			if err != nil {
-				log.Println(err)
-				return actor.WorkerContinue
-			}
-			w.storage.DownloadDocument(ctx, meta.Path, f)
-			err = w.mailbox.Send(ctx, file.NewDownloaded(downloadFile, meta))
-			if err != nil {
-				log.Println(err)
-			}
+			log.Printf("[%s] Deleted file index %s\n", w.name, meta.Path)
 		}
+
+		w.sendFilesToIndexingWorker(ctx, name, "Created", changeList.Created)
+		w.sendFilesToIndexingWorker(ctx, name, "Updated", changeList.Updated)
+
 		return actor.WorkerContinue
+	}
+}
+
+func (w *FileWorker) sendFilesToIndexingWorker(ctx context.Context, name knowledgebase.Name, action string, list file.List) {
+	for _, meta := range list {
+		err := w.fileRepo.Add(ctx, name, meta)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Printf("[%s] %s file index %s\n", w.name, action, meta.Path)
+		downloadFile := path.Join(w.downloadPath, w.name+"_"+uuid.UUID(meta.Id).String()+".txt")
+		f, err := os.Create(downloadFile)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		w.storage.DownloadDocument(ctx, meta.Path, f)
+		err = f.Close()
+		if err != nil {
+			log.Println(err)
+		}
+		err = w.mailbox.Send(ctx, file.NewDownloaded(downloadFile, meta))
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
 func NewFileWorker(name string, fileRepo ports.FileRepo, storage ports.Storage, mailbox actor.MailboxSender[file.Downloaded]) FileWorker {
 	dir, _ := os.Getwd()
-	downloadPath := path.Join(dir, "download", "fake")
+	downloadPath := path.Join(dir, "download", "fake", storage.Provider())
 	_ = os.MkdirAll(downloadPath, os.ModePerm)
 	return FileWorker{name, mailbox, storage, fileRepo, downloadPath}
 }

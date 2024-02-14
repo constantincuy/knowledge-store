@@ -115,7 +115,7 @@ CREATE TABLE document_collection (
     embedding VECTOR,
     CONSTRAINT fk_document_file
       FOREIGN KEY(file_id)
-	    REFERENCES filesystem(id)
+	    REFERENCES filesystem(id) ON DELETE CASCADE 
 )
 `)
 

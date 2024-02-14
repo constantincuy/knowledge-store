@@ -28,10 +28,29 @@ func (f FileRepo) Add(ctx context.Context, knowledgeBase knowledgebase.Name, fi 
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, uuid.UUID(fi.Id).String(), fi.Provider, fi.Path, time.Time(fi.Created), time.Time(fi.Updated))
+	_, err = stmt.ExecContext(ctx, uuid.UUID(fi.Id).String(), fi.Provider, fi.Path, time.Time(fi.Created).UTC(), time.Time(fi.Updated).UTC())
 
 	return err
 }
+
+func (f FileRepo) Delete(ctx context.Context, knowledgeBase knowledgebase.Name, provider file.Provider, path file.Path) error {
+	db, err := f.provider.GetDatabase(string(knowledgeBase))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	stmt, err := db.PrepareContext(ctx, "DELETE FROM filesystem WHERE provider = $1 AND path = $2")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, string(provider), string(path))
+
+	return err
+}
+
 func (f FileRepo) Get(ctx context.Context, knowledgeBase knowledgebase.Name, path file.Path) (file.File, error) {
 	db, err := f.provider.GetDatabase(string(knowledgeBase))
 	if err != nil {

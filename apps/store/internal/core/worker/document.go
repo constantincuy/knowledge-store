@@ -68,6 +68,7 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 			log.Println(err)
 			return actor.WorkerContinue
 		}
+		defer f.Close()
 
 		chunks, err := readChunks(bufio.NewReader(f))
 		if err != nil {
@@ -75,6 +76,10 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 			return actor.WorkerContinue
 		}
 
+		w.docService.Delete(ctx, documents.DeleteDocumentReq{
+			KnowledgeBase: w.name,
+			FileId:        uuid.UUID(downloaded.Meta.Id),
+		})
 		for i, chunk := range chunks {
 			data := make([]string, 1)
 			data[0] = chunk
@@ -85,7 +90,6 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 				return actor.WorkerContinue
 			}
 
-			log.Printf("[%s] Indexed chunk %d of file %s\n", w.name, i+1, downloaded.Meta.Path)
 			_, _ = w.docService.Create(ctx, documents.AddDocumentReq{
 				KnowledgeBase: w.name,
 				FileId:        uuid.UUID(downloaded.Meta.Id),
@@ -93,7 +97,8 @@ func (w *DocumentWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 				Embedding:     embed.Vectors,
 			})
 		}
-
+		log.Printf("[%s] Indexed %d chunks for file %s\n", w.name, len(chunks), downloaded.Meta.Path)
+		f.Close()
 		err = os.Remove(downloaded.DownloadPath)
 		if err != nil {
 			log.Println(err)
