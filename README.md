@@ -3,8 +3,8 @@
 Proof of concept for an AI based document indexing system using Sentence-Transformer written in Go and Typescript.
 
 ## Services
-- embedding service - generates text embeddings (embedding)[/apps/embedding]
-- store service - Collects Document files from different file storage provider and indexes them in a Vector database (store)[/apps/store]
+- embedding service - generates text embeddings (embedding)[./apps/embedding]
+- store service - Collects Document files from different file storage provider and indexes them in a Vector database (store)[./apps/store]
 
 ## Setup
 First setup a docker container with Postgres and PgVector:
@@ -14,7 +14,7 @@ docker run -p 5432:5432 -e POSTGRES_PASSWORD=root -e POSTGRES_USER=root -d ankan
 (DB user and pw are hardcoded. CLI flags and env options will be added later)
 
 Start the embedding server by either running `npm run dev` in `/apps/embedding` or in the root folder of this monorepo.
-Hint: The embedding server downloads the `nomic-ai/nomic-embed-text-v1` automatically this can take a few minutes on the first run.
+Hint: The embedding server downloads the `nomic-ai/nomic-embed-text-v1` (https://huggingface.co/nomic-ai/nomic-embed-text-v1)[HuggingFace] automatically this can take a few minutes on the first run.
 
 Lastly build and run the store server by running
 ```shell
