@@ -34,7 +34,7 @@ curl --location 'http://localhost:8765/knowledge-base/' \
 Creating a new knowledge base will spawn new worker threads which will listen for file changes
 on the configured storage providers. For demonstration purposes there is only a fake storage at the moment
 which will index 3 hard coded files: hund.txt, katze.txt and flugzeug.txt (content was taken from Wikipedia).
-(Indexing runs every 10 seconds at the moment)
+(Indexing file check currently runs every 10 seconds and watches for file changes on the storage provider)
 
 Querying the knowledge base:
 ```
