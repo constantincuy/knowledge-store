@@ -1,0 +1,26 @@
+version: '3.3'
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+  embedding-store:
+    image: embedding-store
+    volumes:
+      - tmp-docs:/opt/app/download
+    restart: always
+    depends_on:
+      - postgres
+      - embedding
+    environment:
+      EMBD_STORE_DB_HOST: postgres
+      EMBD_STORE_DB_USER: root
+      EMBD_STORE_DB_PASSWORD: root
+  embedding:
+    image: embedding
+    restart: always

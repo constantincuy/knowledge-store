@@ -7,20 +7,9 @@ Proof of concept for an AI based document indexing system using Sentence-Transfo
 - store service - Collects Document files from different file storage provider and indexes them in a Vector database [store](./apps/store)
 
 ## Setup
-First setup a docker container with Postgres and PgVector:
-```shell
-docker run -p 5432:5432 -e POSTGRES_PASSWORD=root -e POSTGRES_USER=root -d ankane/pgvector 
-```
-(DB user and pw are hardcoded. CLI flags and env options will be added later)
-
-Start the embedding server by either running `npm run dev` in `/apps/embedding` or in the root folder of this monorepo.
-Hint: The embedding server downloads the `nomic-ai/nomic-embed-text-v1` [HuggingFace](https://huggingface.co/nomic-ai/nomic-embed-text-v1) automatically this can take a few minutes on the first run.
-
-Lastly build and run the store server by running
-```shell
-cd apps/store
-go run .\cmd\web\main.go
-```
+Run `npm i` in the root of the project to install all required dependencies. After installing the dependencies run
+`npm run docker:build` to build the container images of the store service and embedding service. Next copy the [example-compose.yml](example-compose.yml)
+to a new `compose.yml` and run `docker compose up (-d)`.
 
 Creating a knowledge base:
 ```

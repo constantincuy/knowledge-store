@@ -11,12 +11,24 @@ import (
 	"github.com/constantincuy/knowledgestore/internal/core/service/files"
 	"github.com/constantincuy/knowledgestore/internal/core/service/knowledgebases"
 	_ "github.com/lib/pq"
+	"github.com/sethvargo/go-envconfig"
 	"log"
 	"sync"
 )
 
+type AppConfig struct {
+	PostgresHost     string `env:"EMBD_STORE_DB_HOST, required"`
+	PostgresUser     string `env:"EMBD_STORE_DB_USER, required"`
+	PostgresPassword string `env:"EMBD_STORE_DB_PASSWORD, required"`
+}
+
 func main() {
-	pr := postgres.NewProvider("root", "root", "localhost", "disable")
+	var cfg AppConfig
+	if err := envconfig.Process(context.Background(), &cfg); err != nil {
+		log.Fatal(err)
+	}
+
+	pr := postgres.NewProvider(cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresHost, "disable")
 	postgres.RunSetup(context.Background(), pr)
 	knowledgeBaseRepo, err := postgres.NewKnowledgeBaseRepo(pr)
 	fileRepo, err := postgres.NewFileRepo(pr)
