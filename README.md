@@ -17,7 +17,7 @@ Proof of concept for an AI based document indexing system using Sentence-Transfo
 2. After installing the dependencies, build the container images for the store service and embedding service using the following command:
 
     ```bash
-    npm run docker:build
+    npm run build:docker
     ```
 
 3. Copy the [example-compose.yml](example-compose.yml) file to a new `compose.yml`.
