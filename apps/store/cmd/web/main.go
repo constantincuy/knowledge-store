@@ -17,9 +17,11 @@ import (
 )
 
 type AppConfig struct {
-	PostgresHost     string `env:"EMBD_STORE_DB_HOST, required"`
-	PostgresUser     string `env:"EMBD_STORE_DB_USER, required"`
-	PostgresPassword string `env:"EMBD_STORE_DB_PASSWORD, required"`
+	PostgresHost       string `env:"EMBD_STORE_DB_HOST, required"`
+	PostgresUser       string `env:"EMBD_STORE_DB_USER, required"`
+	PostgresPassword   string `env:"EMBD_STORE_DB_PASSWORD, required"`
+	LocalEmbeddingHost string `env:"EMBD_STORE_EMBEDDING_EXTRACTOR_HOST, required"`
+	LocalEmbeddingPort int    `env:"EMBD_STORE_EMBEDDING_EXTRACTOR_PORT, required"`
 }
 
 func main() {
@@ -38,7 +40,7 @@ func main() {
 		log.Fatalf("failed to init postgres repo: %s", err)
 	}
 
-	embedding := localembed.Extractor{}
+	embedding := localembed.NewExtractor(cfg.LocalEmbeddingHost, cfg.LocalEmbeddingPort)
 	knowledgeService := knowledgebases.NewService(knowledgeBaseRepo)
 	docService := documents.NewService(docRepo)
 	fileService := files.NewService(fileRepo, embedding)
