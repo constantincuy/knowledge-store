@@ -6,6 +6,13 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
@@ -14,6 +21,8 @@ services:
     volumes:
       - tmp-docs:/opt/app/download
     restart: always
+    ports:
+      - "8765:8765"
     depends_on:
       - postgres
       - embedding
@@ -21,6 +30,15 @@ services:
       EMBD_STORE_DB_HOST: postgres
       EMBD_STORE_DB_USER: root
       EMBD_STORE_DB_PASSWORD: root
+      EMBD_STORE_EMBEDDING_EXTRACTOR_HOST: embedding
+      EMBD_STORE_EMBEDDING_EXTRACTOR_PORT: 3000
   embedding:
     image: embedding
     restart: always
+    ports:
+      - "3000:3000"
+
+
+volumes:
+  postgres-data: {}
+  tmp-docs: {}
