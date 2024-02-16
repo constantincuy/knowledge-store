@@ -1,81 +1,71 @@
-# Turborepo starter
+# Knowledge store
 
-This is an official starter Turborepo.
+Proof of concept for an AI based document indexing system using Sentence-Transformer written in Go and Typescript.
 
-## Using this example
+## Services
+- [Embedding service](./apps/embedding) - generates text embeddings 
+- [Store service](./apps/embedding) - Collects Document files from different file storage provider and indexes them in a Vector database (Postgres with [pgvector](https://github.com/pgvector/pgvector))
 
-Run the following command:
+### Setting up the Project
 
-```sh
-npx create-turbo@latest
-```
+1. Run the following command in the root of the project to install all required dependencies:
 
-## What's inside?
+    ```bash
+    npm i
+    ```
 
-This Turborepo includes the following packages/apps:
+2. After installing the dependencies, build the container images for the store service and embedding service using the following command:
 
-### Apps and Packages
+    ```bash
+    npm run build:docker
+    ```
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+3. Copy the [example-compose.yml](example-compose.yml) file to a new `compose.yml`.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+4. Run the following command to start the services:
 
-### Utilities
+    ```bash
+    docker compose up (-d)
+    ```
 
-This Turborepo has some additional tools already setup for you:
+    **Note:**
+    - Depending on your internet speed, you may need to wait for a few minutes for the embedding service to download the `nomic-ai/nomic-embed-text-v1` model from [HuggingFace](https://huggingface.co/nomic-ai/nomic-embed-text-v1).
+    - Before continuing, ensure that the following log lines appear in the terminal by running the following command:
+      ```bash
+      docker compose logs embedding
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+      {"level":30,"time":1708029322690,"pid":25,"hostname":"e2fe08cd66ed","msg":"Loaded model nomic-ai/nomic-embed-text-v1"}
+      {"level":30,"time":1708029322704,"pid":25,"hostname":"e2fe08cd66ed","msg":"Server listening at http://0.0.0.0:3000"}
+      ```
 
-### Build
+5. Creating a knowledge base:
+    ```bash
+    curl --location 'http://localhost:8765/knowledge-base/' \
+    --header 'Content-Type: application/json' \
+    --data '{
+        "name": "development"
+    }'
+    ```
+    **Note:**
+    - Creating a new knowledge base will spawn new worker threads which will listen for file changes on the configured storage providers.
+    - For demonstration purposes there is only a fake storage at the moment which will index 3 hard coded files: hund.txt, katze.txt and flugzeug.txt (content was taken from Wikipedia).
+    - Indexing file check currently runs every 10 seconds and watches for file changes on the storage provider
 
-To build all apps and packages, run the following command:
+6. Querying the knowledge base:
+    ```bash
+    curl --location 'http://localhost:8765/knowledge-base/development/files?q=Was%20kann%20fliegen%3F'
+    ```
 
-```
-cd my-turborepo
-pnpm build
-```
+    Example response:
+    ```json
+    {
+        "Files": [
+            {
+                "Id": "54f1591f-c2cb-42c7-8230-9305875020a9",
+                "Path": "my/path/flugzeug.txt",
+                "Provider": "fake_provider_1"
+            }
+          ]
+    }
+    ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon",
     "start": "node dist/index.js",
-    "build": "esbuild --format=esm --bundle --platform=node --minify --packages=external src/index.ts --outdir=./dist --allow-overwrite"
+    "build": "esbuild --format=esm --bundle --platform=node --minify --packages=external src/index.ts --outdir=./dist --allow-overwrite",
+    "build:docker": "docker build -t embedding ."
   },
   "private": true,
   "dependencies": {
@@ -15,7 +16,6 @@
     "fastify": "^4.26.0"
   },
   "devDependencies": {
-    "@repo/typescript-config": "*",
     "@types/node": "20.11.16",
     "esbuild": "0.20.0",
     "nodemon": "3.0.3",
