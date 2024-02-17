@@ -28,7 +28,7 @@ func (e Extractor) Extract(strings []string) (embedding.Embedding, error) {
 	if err != nil {
 		return embedding.Embedding{}, errors.Join(ports.ErrGeneratingEmbeddings, err)
 	}
-	c := http.Client{Timeout: time.Duration(1) * time.Second}
+	c := http.Client{Timeout: time.Duration(30) * time.Second}
 	resp, err := c.Post(fmt.Sprintf("http://%s:%d/embeddings/generate", e.host, e.port), "application/json", bytes.NewReader(b))
 	if err != nil {
 		return embedding.Embedding{}, errors.Join(ports.ErrGeneratingEmbeddings, err)

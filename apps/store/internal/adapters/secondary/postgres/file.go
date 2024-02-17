@@ -28,10 +28,47 @@ func (f FileRepo) Add(ctx context.Context, knowledgeBase knowledgebase.Name, fi 
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, uuid.UUID(fi.Id).String(), fi.Provider, fi.Path, time.Time(fi.Created), time.Time(fi.Updated))
+	_, err = stmt.ExecContext(ctx, uuid.UUID(fi.Id).String(), fi.Provider, fi.Path, time.Time(fi.Created).UTC(), time.Time(fi.Updated).UTC())
 
 	return err
 }
+
+func (f FileRepo) Update(ctx context.Context, knowledgeBase knowledgebase.Name, fi file.File) error {
+	db, err := f.provider.GetDatabase(string(knowledgeBase))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	stmt, err := db.PrepareContext(ctx, "UPDATE filesystem SET updated = $1 WHERE unique_id = $2")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, time.Time(fi.Updated).UTC(), uuid.UUID(fi.Id).String())
+
+	return err
+}
+
+func (f FileRepo) Delete(ctx context.Context, knowledgeBase knowledgebase.Name, provider file.Provider, path file.Path) error {
+	db, err := f.provider.GetDatabase(string(knowledgeBase))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	stmt, err := db.PrepareContext(ctx, "DELETE FROM filesystem WHERE provider = $1 AND path = $2")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, string(provider), string(path))
+
+	return err
+}
+
 func (f FileRepo) Get(ctx context.Context, knowledgeBase knowledgebase.Name, path file.Path) (file.File, error) {
 	db, err := f.provider.GetDatabase(string(knowledgeBase))
 	if err != nil {
@@ -133,7 +170,7 @@ func (f FileRepo) GetAllProviderFiles(ctx context.Context, knowledgeBase knowled
 	}
 	defer db.Close()
 
-	stmt, err := db.PrepareContext(ctx, "SELECT provider, path, created, updated FROM filesystem WHERE provider = $1;")
+	stmt, err := db.PrepareContext(ctx, "SELECT unique_id, provider, path, created, updated FROM filesystem WHERE provider = $1;")
 	if err != nil {
 		return files, err
 	}
@@ -147,8 +184,13 @@ func (f FileRepo) GetAllProviderFiles(ctx context.Context, knowledgeBase knowled
 
 	for rows.Next() {
 		f := file.File{}
-		rows.Scan(&f.Provider, &f.Path, &f.Created, &f.Updated)
-		files = append(files, f)
+		var uid string
+		rows.Scan(&uid, &f.Provider, &f.Path, &f.Created, &f.Updated)
+		id, err := uuid.Parse(uid)
+		if err == nil {
+			f.Id, err = common.NewIdFrom(id)
+			files = append(files, f)
+		}
 	}
 
 	return files, nil

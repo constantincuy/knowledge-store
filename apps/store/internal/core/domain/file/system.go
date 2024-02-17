@@ -16,6 +16,7 @@ func (f Filesystem) Sync(files List) (ChangeList, error) {
 		} else {
 			t := time.Time(old.Updated)
 			if t.Before(time.Time(file.Updated)) {
+				file.Id = old.Id
 				updated[key] = file
 			}
 		}
