@@ -9,6 +9,7 @@ import (
 
 type FileRepo interface {
 	Add(ctx context.Context, knowledgeBase knowledgebase.Name, file file.File) error
+	Update(ctx context.Context, knowledgeBase knowledgebase.Name, file file.File) error
 	Delete(ctx context.Context, knowledgeBase knowledgebase.Name, provider file.Provider, path file.Path) error
 	Get(ctx context.Context, knowledgeBase knowledgebase.Name, path file.Path) (file.File, error)
 	Search(ctx context.Context, knowledgeBase knowledgebase.Name, embedding document.Embedding) ([]file.File, error)

@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const WordsPerChunk = 256
+
 type DocumentWorker struct {
 	name       string
 	mailbox    actor.MailboxReceiver[file.Downloaded]
@@ -33,14 +35,14 @@ func readChunks(file io.Reader) ([]string, error) {
 		chunk += word + " "
 		words++
 
-		if words == 6000 {
+		if words == WordsPerChunk {
 			chunks = append(chunks, strings.TrimSpace(chunk))
 			chunk = ""
 			words = 0
 		}
 	}
 
-	if words < 6000 {
+	if words < WordsPerChunk {
 		chunks = append(chunks, strings.TrimSpace(chunk))
 		chunk = ""
 		words = 0

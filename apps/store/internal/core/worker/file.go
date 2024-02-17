@@ -21,6 +21,25 @@ type FileWorker struct {
 	downloadPath string
 }
 
+type IndexWorkType int
+
+var (
+	IndexCreate IndexWorkType = 1
+	IndexUpdate IndexWorkType = 2
+)
+
+func indexTypeToString(it IndexWorkType) string {
+	if it == IndexCreate {
+		return "Created"
+	}
+
+	if it == IndexUpdate {
+		return "Updated"
+	}
+
+	return ""
+}
+
 func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 	select {
 	case <-ctx.Done():
@@ -39,27 +58,35 @@ func (w *FileWorker) DoWork(ctx actor.Context) actor.WorkerStatus {
 		for _, meta := range changeList.Deleted {
 			err := w.fileRepo.Delete(ctx, name, provider, meta.Path)
 			if err != nil {
-				log.Println(err)
+				log.Printf("[%s] Failed to delete file index %s\n", w.name, err)
 				return actor.WorkerContinue
 			}
 			log.Printf("[%s] Deleted file index %s\n", w.name, meta.Path)
 		}
 
-		w.sendFilesToIndexingWorker(ctx, name, "Created", changeList.Created)
-		w.sendFilesToIndexingWorker(ctx, name, "Updated", changeList.Updated)
+		w.sendFilesToIndexingWorker(ctx, name, IndexCreate, changeList.Created)
+		w.sendFilesToIndexingWorker(ctx, name, IndexUpdate, changeList.Updated)
 
 		return actor.WorkerContinue
 	}
 }
 
-func (w *FileWorker) sendFilesToIndexingWorker(ctx context.Context, name knowledgebase.Name, action string, list file.List) {
+func (w *FileWorker) sendFilesToIndexingWorker(ctx context.Context, name knowledgebase.Name, action IndexWorkType, list file.List) {
 	for _, meta := range list {
-		err := w.fileRepo.Add(ctx, name, meta)
+		var err error
+
+		switch action {
+		case IndexCreate:
+			err = w.fileRepo.Add(ctx, name, meta)
+		case IndexUpdate:
+			err = w.fileRepo.Update(ctx, name, meta)
+		}
+
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		log.Printf("[%s] %s file index %s\n", w.name, action, meta.Path)
+		log.Printf("[%s] %s file index %s\n", w.name, indexTypeToString(action), meta.Path)
 		downloadFile := path.Join(w.downloadPath, w.name+"_"+uuid.UUID(meta.Id).String()+".txt")
 		f, err := os.Create(downloadFile)
 		if err != nil {

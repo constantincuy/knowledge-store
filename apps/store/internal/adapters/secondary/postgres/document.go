@@ -23,7 +23,7 @@ func (d DocumentRepo) Delete(ctx context.Context, knowledgeBase knowledgebase.Na
 	}
 	defer db.Close()
 
-	stmt, err := db.PrepareContext(ctx, "DELETE FROM document_collection WHERE fileId = $1")
+	stmt, err := db.PrepareContext(ctx, "DELETE FROM document_collection WHERE file_id = (SELECT id FROM filesystem WHERE unique_id = $1)")
 	if err != nil {
 		return err
 	}
