@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/constantincuy/knowledgestore/internal/adapters/primary/rest/models"
 	"github.com/constantincuy/knowledgestore/internal/adapters/primary/rest/response"
 	"github.com/constantincuy/knowledgestore/internal/core/service"
 	"github.com/constantincuy/knowledgestore/internal/core/service/files"
@@ -62,7 +63,13 @@ func (c KnowledgeBaseController) SearchKnowledgeBase(r *http.Request) response.R
 		return response.FromError(err)
 	}
 
-	return response.New().Json(fis)
+	resData := make([]models.File, len(fis.Files))
+
+	for i, df := range fis.Files {
+		resData[i] = models.NewFileFrom(df)
+	}
+
+	return response.New().Json(resData)
 }
 
 func (c KnowledgeBaseController) Register(router *mux.Router) {

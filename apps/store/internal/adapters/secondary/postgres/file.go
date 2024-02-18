@@ -105,7 +105,7 @@ func (f FileRepo) Search(ctx context.Context, knowledgeBase knowledgebase.Name, 
 	}
 	defer db.Close()
 
-	stmt, err := db.PrepareContext(ctx, "SELECT f.unique_id, f.path, f.provider FROM document_collection dc JOIN filesystem f ON f.id = dc.file_id WHERE 1 - (embedding <=> $1) >= 0.5")
+	stmt, err := db.PrepareContext(ctx, "SELECT f.unique_id, f.path, f.provider, f.created, f.updated FROM document_collection dc JOIN filesystem f ON f.id = dc.file_id WHERE 1 - (embedding <=> $1) >= 0.5")
 	if err != nil {
 		return result, err
 	}
@@ -120,7 +120,7 @@ func (f FileRepo) Search(ctx context.Context, knowledgeBase knowledgebase.Name, 
 	for rows.Next() {
 		fi := file.File{}
 		var uid string
-		err := rows.Scan(&uid, &fi.Path, &fi.Provider)
+		err := rows.Scan(&uid, &fi.Path, &fi.Provider, &fi.Created, &fi.Updated)
 		if err != nil {
 			return result, err
 		}
