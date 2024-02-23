@@ -5,7 +5,7 @@ import (
 	"github.com/constantincuy/knowledgestore/internal/adapters/primary/rest"
 	"github.com/constantincuy/knowledgestore/internal/adapters/secondary/embedding/localembed"
 	"github.com/constantincuy/knowledgestore/internal/adapters/secondary/postgres"
-	"github.com/constantincuy/knowledgestore/internal/adapters/secondary/storage/fake"
+	"github.com/constantincuy/knowledgestore/internal/adapters/secondary/storage/zip"
 	"github.com/constantincuy/knowledgestore/internal/core/actor"
 	"github.com/constantincuy/knowledgestore/internal/core/service/documents"
 	"github.com/constantincuy/knowledgestore/internal/core/service/files"
@@ -13,6 +13,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sethvargo/go-envconfig"
 	"log"
+	"os"
+	"path"
 	"sync"
 )
 
@@ -45,7 +47,9 @@ func main() {
 	docService := documents.NewService(docRepo)
 	fileService := files.NewService(fileRepo, embedding)
 
-	fakeStorage := fake.NewStorage()
+	dir, _ := os.Getwd()
+	zipPath := path.Join(dir, "example", "example.zip")
+	fakeStorage := zip.NewStorage(zipPath)
 	mn := actor.NewManager(knowledgeBaseRepo, fileRepo, docService, embedding, fakeStorage)
 
 	server := rest.New(&mn, knowledgeService, fileService)
