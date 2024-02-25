@@ -12,10 +12,11 @@ type Api interface {
 }
 
 type Service struct {
+	storage   ports.Storage
 	fileRepo  ports.FileRepo
 	embedding ports.EmbeddingExtractor
 }
 
-func NewService(fileRepo ports.FileRepo, embedding ports.EmbeddingExtractor) Service {
-	return Service{fileRepo, embedding}
+func NewService(storage ports.Storage, fileRepo ports.FileRepo, embedding ports.EmbeddingExtractor) Service {
+	return Service{storage, fileRepo, embedding}
 }
