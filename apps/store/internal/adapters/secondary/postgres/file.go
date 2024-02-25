@@ -105,7 +105,7 @@ func (f FileRepo) Search(ctx context.Context, knowledgeBase knowledgebase.Name, 
 	}
 	defer db.Close()
 
-	stmt, err := db.PrepareContext(ctx, "SELECT f.unique_id, f.path, f.provider, f.created, f.updated FROM document_collection dc JOIN filesystem f ON f.id = dc.file_id WHERE 1 - (embedding <=> $1) >= 0.5")
+	stmt, err := db.PrepareContext(ctx, "SELECT f.unique_id, f.path, f.provider, f.created, f.updated, dc.chunk, dc.page FROM document_collection dc JOIN filesystem f ON f.id = dc.file_id WHERE 1 - (embedding <=> $1) >= 0.5")
 	if err != nil {
 		return result, err
 	}
@@ -117,18 +117,41 @@ func (f FileRepo) Search(ctx context.Context, knowledgeBase knowledgebase.Name, 
 	}
 	defer rows.Close()
 
+	files := make(map[string]*file.File)
 	for rows.Next() {
 		fi := file.File{}
 		var uid string
-		err := rows.Scan(&uid, &fi.Path, &fi.Provider, &fi.Created, &fi.Updated)
+		var page int
+		var chunk int
+		err := rows.Scan(&uid, &fi.Path, &fi.Provider, &fi.Created, &fi.Updated, &chunk, &page)
 		if err != nil {
 			return result, err
 		}
 		id, err := uuid.Parse(uid)
 		if err == nil {
 			fi.Id, err = common.NewIdFrom(id)
-			result = append(result, fi)
+			key := string(fi.Path)
+			_, ex := files[key]
+			if !ex {
+				files[key] = &fi
+			}
+
+			ch, err := document.NewChunk(chunk)
+			if err != nil {
+				return result, err
+			}
+
+			pg, err := document.NewPageNumber(page)
+			if err != nil {
+				return result, err
+			}
+
+			files[key].Chunks = append(files[key].Chunks, document.Document{Chunk: ch, Page: pg})
 		}
+	}
+
+	for _, fi := range files {
+		result = append(result, *fi)
 	}
 
 	return result, err

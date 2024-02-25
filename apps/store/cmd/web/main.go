@@ -42,15 +42,16 @@ func main() {
 		log.Fatalf("failed to init postgres repo: %s", err)
 	}
 
+	dir, _ := os.Getwd()
+	zipPath := path.Join(dir, "example", "example.zip")
+	zipStorage := zip.NewStorage(zipPath)
+
 	embedding := localembed.NewExtractor(cfg.LocalEmbeddingHost, cfg.LocalEmbeddingPort)
 	knowledgeService := knowledgebases.NewService(knowledgeBaseRepo)
 	docService := documents.NewService(docRepo)
-	fileService := files.NewService(fileRepo, embedding)
+	fileService := files.NewService(zipStorage, fileRepo, embedding)
 
-	dir, _ := os.Getwd()
-	zipPath := path.Join(dir, "example", "example.zip")
-	fakeStorage := zip.NewStorage(zipPath)
-	mn := actor.NewManager(knowledgeBaseRepo, fileRepo, docService, embedding, fakeStorage)
+	mn := actor.NewManager(knowledgeBaseRepo, fileRepo, docService, embedding, zipStorage)
 
 	server := rest.New(&mn, knowledgeService, fileService)
 	wg := sync.WaitGroup{}
