@@ -9,3 +9,13 @@ type File struct {
 	Created  Created
 	Updated  Updated
 }
+
+func NewFile(path Path, provider Provider, created Created, updated Updated) File {
+	return File{
+		Id:       common.NewId(),
+		Path:     path,
+		Provider: provider,
+		Created:  created,
+		Updated:  updated,
+	}
+}
